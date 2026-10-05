@@ -1,0 +1,1 @@
+These previews use the actual Swing panels rendered offscreen. The dashboard values are synthetic layout examples, not live database results. The actual clinic workspace also includes the navigation sidebar and account header.

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="PetCareVisits" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" whenNoDataType="AllSectionsNoDetail">
+ <property name="net.sf.jasperreports.default.font.name" value="SansSerif"/>
+ <parameter name="FROM_DATE" class="java.sql.Timestamp"/>
+ <parameter name="TO_DATE" class="java.sql.Timestamp"/>
+ <queryString><![CDATA[
+ SELECT a.id,a.slot,c.name customer,p.name pet,s.name service,v.name vet,a.status,a.fee,
+ COALESCE(pay.paid,0) paid,CASE WHEN a.status='CANCELLED' THEN 0 ELSE a.fee-COALESCE(pay.paid,0) END balance,
+ COALESCE(t.diagnosis,'') diagnosis
+ FROM appointments a JOIN pets p ON p.id=a.pet_id
+ JOIN customers c ON c.id=a.customer_id JOIN services s ON s.id=a.service_id
+ JOIN vets v ON v.id=a.vet_id LEFT JOIN treatments t ON t.appointment_id=a.id
+ LEFT JOIN (SELECT appointment_id,SUM(amount) paid FROM payments GROUP BY appointment_id) pay ON pay.appointment_id=a.id
+ WHERE a.slot >= $P{FROM_DATE} AND a.slot < $P{TO_DATE} ORDER BY a.slot,a.id
+ ]]></queryString>
+ <field name="id" class="java.lang.Long"/><field name="slot" class="java.sql.Timestamp"/>
+ <field name="customer" class="java.lang.String"/><field name="pet" class="java.lang.String"/>
+ <field name="service" class="java.lang.String"/><field name="vet" class="java.lang.String"/>
+ <field name="status" class="java.lang.String"/><field name="fee" class="java.math.BigDecimal"/>
+ <field name="paid" class="java.math.BigDecimal"/><field name="balance" class="java.math.BigDecimal"/>
+ <field name="diagnosis" class="java.lang.String"/>
+ <variable name="TOTAL_PAID" class="java.math.BigDecimal" calculation="Sum"><variableExpression><![CDATA[$F{paid}]]></variableExpression></variable>
+ <variable name="TOTAL_BALANCE" class="java.math.BigDecimal" calculation="Sum"><variableExpression><![CDATA[$F{balance}]]></variableExpression></variable>
+ <title><band height="65">
+ <staticText><reportElement x="0" y="0" width="802" height="28"/><textElement><font size="20" isBold="true"/></textElement><text><![CDATA[PetCare Clinic visit and revenue report]]></text></staticText>
+ <textField><reportElement x="0" y="32" width="802" height="22"/><textFieldExpression><![CDATA["Appointment period: " + $P{FROM_DATE}.toLocalDateTime().toLocalDate() + " to " + $P{TO_DATE}.toLocalDateTime().toLocalDate().minusDays(1) + " | Currency LKR"]]></textFieldExpression></textField>
+ </band></title>
+ <columnHeader><band height="24">
+<staticText><reportElement x="0" y="0" width="36" height="22"/><textElement><font size="10" isBold="true"/></textElement><text><![CDATA[ID]]></text></staticText>
+<staticText><reportElement x="36" y="0" width="112" height="22"/><textElement><font size="10" isBold="true"/></textElement><text><![CDATA[Date and time]]></text></staticText>
+<staticText><reportElement x="148" y="0" width="118" height="22"/><textElement><font size="10" isBold="true"/></textElement><text><![CDATA[Customer]]></text></staticText>
+<staticText><reportElement x="266" y="0" width="78" height="22"/><textElement><font size="10" isBold="true"/></textElement><text><![CDATA[Pet]]></text></staticText>
+<staticText><reportElement x="344" y="0" width="132" height="22"/><textElement><font size="10" isBold="true"/></textElement><text><![CDATA[Service]]></text></staticText>
+<staticText><reportElement x="476" y="0" width="96" height="22"/><textElement><font size="10" isBold="true"/></textElement><text><![CDATA[Status]]></text></staticText>
+<staticText><reportElement x="572" y="0" width="76" height="22"/><textElement><font size="10" isBold="true"/></textElement><text><![CDATA[Fee]]></text></staticText>
+<staticText><reportElement x="648" y="0" width="76" height="22"/><textElement><font size="10" isBold="true"/></textElement><text><![CDATA[Paid]]></text></staticText>
+<staticText><reportElement x="724" y="0" width="78" height="22"/><textElement><font size="10" isBold="true"/></textElement><text><![CDATA[Balance]]></text></staticText>
+ </band></columnHeader>
+ <detail><band height="65" splitType="Stretch">
+<textField textAdjust="StretchHeight"><reportElement x="0" y="0" width="32" height="22"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$F{id}]]></textFieldExpression></textField>
+<textField pattern="yyyy-MM-dd HH:mm" textAdjust="StretchHeight"><reportElement x="36" y="0" width="108" height="22"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$F{slot}]]></textFieldExpression></textField>
+<textField textAdjust="StretchHeight"><reportElement x="148" y="0" width="114" height="22"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$F{customer}]]></textFieldExpression></textField>
+<textField textAdjust="StretchHeight"><reportElement x="266" y="0" width="74" height="22"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$F{pet}]]></textFieldExpression></textField>
+<textField textAdjust="StretchHeight"><reportElement x="344" y="0" width="128" height="22"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$F{service}]]></textFieldExpression></textField>
+<textField textAdjust="StretchHeight"><reportElement x="476" y="0" width="92" height="22"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$F{status}]]></textFieldExpression></textField>
+<textField pattern="#,##0.00" textAdjust="StretchHeight"><reportElement x="572" y="0" width="72" height="22"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$F{fee}]]></textFieldExpression></textField>
+<textField pattern="#,##0.00" textAdjust="StretchHeight"><reportElement x="648" y="0" width="72" height="22"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$F{paid}]]></textFieldExpression></textField>
+<textField pattern="#,##0.00" textAdjust="StretchHeight"><reportElement x="724" y="0" width="74" height="22"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA[$F{balance}]]></textFieldExpression></textField>
+ <textField textAdjust="StretchHeight"><reportElement positionType="Float" x="0" y="26" width="802" height="30"/><textElement><font size="9"/></textElement><textFieldExpression><![CDATA["Vet: " + $F{vet} + " | Diagnosis: " + $F{diagnosis}]]></textFieldExpression></textField>
+ </band></detail>
+ <pageFooter><band height="22"><textField><reportElement x="700" y="0" width="102" height="20"/><textElement textAlignment="Right"/><textFieldExpression><![CDATA["Page " + $V{PAGE_NUMBER}]]></textFieldExpression></textField></band></pageFooter>
+ <summary><band height="75">
+ <textField><reportElement x="0" y="5" width="802" height="22"/><textElement><font isBold="true"/></textElement><textFieldExpression><![CDATA["Visits: " + $V{REPORT_COUNT} + " | Collected LKR: " + ($V{TOTAL_PAID} == null ? "0.00" : $V{TOTAL_PAID}) + " | Outstanding LKR: " + ($V{TOTAL_BALANCE} == null ? "0.00" : $V{TOTAL_BALANCE})]]></textFieldExpression></textField>
+ <staticText><reportElement x="0" y="32" width="802" height="36"/><textElement><font size="9"/></textElement><text><![CDATA[Collected amounts include all payments recorded for visits in the selected appointment period. This is a visit-based report, not a cashbook filtered by payment date. Cancelled appointments contribute zero outstanding balance.]]></text></staticText>
+ </band></summary>
+</jasperReport>
